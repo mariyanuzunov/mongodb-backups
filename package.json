@@ -16,8 +16,6 @@
     "@aws-sdk/lib-storage": "^3.438.0",
     "dotenv": "^16.0.3",
     "fs-extra": "^11.1.0",
-    "moment": "^2.29.4",
-    "node-cron": "^3.0.2",
     "node-schedule": "^2.1.1"
   }
 }

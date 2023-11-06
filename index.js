@@ -2,7 +2,6 @@ import { spawnSync } from 'node:child_process'
 import fse from 'fs-extra'
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
-import moment from 'moment'
 import nodeSchedule from 'node-schedule'
 
 import settings from './config/settings.js'
@@ -42,8 +41,7 @@ async function backup(settings) {
 
   const mongoDumpCommand = `${settings.common.MONGODUMP_PATH} --uri="${settings.projectConfig.DB_URI}" --out="mongoDumpFolder"`
   execute(mongoDumpCommand, `[mongodb-backups] [${projectName}] dumping`)
-  const currentTime = moment().toISOString()
-  const fileName = `${settings.projectConfig.NAME}-${currentTime}.7z`
+  const fileName = `${settings.projectConfig.NAME}-${getCurrentTime()}.7z`
   const localFilePath = `./backups/${fileName}`
   const archiveCommand = `${settings.common.ARCHIVER_PATH} a -t7z -mx=${settings.common.COMPRESSION_LEVEL} -mmt=${settings.common.COMPRESSION_THREADS} ${localFilePath} mongoDumpFolder`
   execute(archiveCommand, `[mongodb-backups] [${projectName}] compressing`)
@@ -109,4 +107,16 @@ function printSchedule() {
   for (const job of Object.values(nodeSchedule.scheduledJobs)) {
     console.log(`\x1b[34m[mongodb-backups] ${job.name} backup is scheduled for ${job.nextInvocation()}\x1b[0m`)
   }
+}
+
+function getCurrentTime() {
+  const date = new Date()
+  const day = date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()
+  const month = date.getMonth() + 1
+  const year = date.getFullYear()
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  const seconds = date.getSeconds()
+
+  return `${day}-${month}-${year}_${hours}-${minutes}-${seconds}Z`
 }
