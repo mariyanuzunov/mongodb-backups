@@ -13,9 +13,44 @@ if (!Object.keys(settings.projectConfigs).length) {
   process.exit(0)
 }
 
-for (const [project, config] of Object.entries(settings.projectConfigs)) {
+const args = process.argv.slice(2)
+console.log('args: ', args)
+const skipCron = args.includes('--skip-cron')
+
+// if --skip-cron is passed as an argument, run the backup process once and exit
+if (skipCron) {
+  const promises = Object.values(settings.projectConfigs)
+    .map((config) => {
+      if (config.STATUS !== 'enabled') return
+
+      return new Promise((resolve, reject) => {
+        console.log(`\x1b[32m[mongodb-backups] starting the backup process for ${config.NAME}...\x1b[0m`)
+
+        backup({
+          common: settings.common,
+          projectConfig: config
+        })
+          .then(() => {
+            console.log(`\x1b[32m[mongodb-backups] ${config.NAME} backup completed successfully!\x1b[0m`)
+            resolve()
+          })
+          .catch((error) => {
+            console.log(`\x1b[32m[mongodb-backups] ${config.NAME} backup error: \x1b[0m`)
+            console.error(error.message)
+          })
+      })
+    })
+    .filter(Boolean)
+
+  await Promise.all(promises)
+  console.log('All backups completed successfully!')
+
+  process.exit(0)
+}
+
+for (const config of Object.values(settings.projectConfigs)) {
   if (config.STATUS === 'enabled') {
-    nodeSchedule.scheduleJob(project, config.CRON, async () => {
+    nodeSchedule.scheduleJob(config.NAME, config.CRON, async () => {
       console.log(`\x1b[32m[mongodb-backups] starting the backup process for ${config.NAME}...\x1b[0m`)
 
       await backup({
