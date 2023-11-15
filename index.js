@@ -74,16 +74,16 @@ printSchedule()
 async function backup(settings) {
   const projectName = settings.projectConfig.NAME
 
-  const mongoDumpCommand = `${settings.common.MONGODUMP_PATH} --uri="${settings.projectConfig.DB_URI}" --out="mongoDumpFolder"`
+  const dumpDir = `dump_${projectName}`
+  const mongoDumpCommand = `${settings.common.MONGODUMP_PATH} --uri="${settings.projectConfig.DB_URI}" --out="${dumpDir}"`
   execute(mongoDumpCommand, `[mongodb-backups] [${projectName}] dumping`)
   const fileName = `${settings.projectConfig.NAME}-${getCurrentTime()}.7z`
   const localFilePath = `./backups/${fileName}`
-  const archiveCommand = `${settings.common.ARCHIVER_PATH} a -t7z -mx=${settings.common.COMPRESSION_LEVEL} -mmt=${settings.common.COMPRESSION_THREADS} ${localFilePath} mongoDumpFolder`
+  const archiveCommand = `${settings.common.ARCHIVER_PATH} a -t7z -mx=${settings.common.COMPRESSION_LEVEL} -mmt=${settings.common.COMPRESSION_THREADS} ${localFilePath} ${dumpDir}`
   execute(archiveCommand, `[mongodb-backups] [${projectName}] compressing`)
 
   console.log(`[mongodb-backups] [${projectName}] removing dump dir...`)
-  await fse.remove('./mongoDumpFolder')
-  console.log(`[mongodb-backups] [${projectName}] reading file...`)
+  await fse.remove(`./${dumpDir}`)
 
   console.log(`[mongodb-backups] [${projectName}] uploading...`)
   const buffer = await fse.readFile(localFilePath)
